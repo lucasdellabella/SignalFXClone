@@ -24,6 +24,7 @@
     "apollo-server-express": "^2.23.0",
     "connect": "^3.7.0",
     "graphql": "^15.5.0",
+    "pg": "^8.6.0",
     "qs-middleware": "^1.0.3"
   }
 }
