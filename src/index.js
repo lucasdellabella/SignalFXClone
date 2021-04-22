@@ -32,6 +32,7 @@ const typeDefs = gql`
   }
   type Mutation {
     newUser(name: String!, age: Int, city: String): User
+    deleteUser(name: String!): User
   }
 `;
 
@@ -47,6 +48,8 @@ let users = {
     city: 'San Francisco'
   },
 }
+
+
 // A map of functions which return data for the schema.
 const resolvers = {
   Query: {
@@ -55,7 +58,12 @@ const resolvers = {
   },
 
   Mutation: {
-    newUser:  (_, { name, age, city }) => users[name] = {name, age, city}
+    newUser:  (_, { name, age, city }) => users[name] = {name, age, city},
+    deleteUser: (_, { name }) => {
+      const userToDelete = users[name]
+      delete users[name]
+      return userToDelete
+    }
   }
 
 };
