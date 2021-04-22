@@ -19,17 +19,11 @@
     "url": "https://github.com/lucasdellabella/SignalFXClone/issues"
   },
   "homepage": "https://github.com/lucasdellabella/SignalFXClone#readme",
-  "devDependencies": {
-    "@graphql-codegen/cli": "1.21.4",
-    "graphql": "^15.5.0",
-    "typescript": "^4.2.4",
-    "@graphql-codegen/typescript": "1.22.0",
-    "@graphql-codegen/typescript-resolvers": "1.19.1"
-  },
   "dependencies": {
     "apollo-server": "^2.23.0",
     "apollo-server-express": "^2.23.0",
     "connect": "^3.7.0",
+    "graphql": "^15.5.0",
     "qs-middleware": "^1.0.3"
   }
 }
