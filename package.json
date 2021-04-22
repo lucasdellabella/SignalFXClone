@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "codegen": "graphql-codegen --config codegen.yml"
   },
@@ -25,5 +26,10 @@
     "@graphql-codegen/typescript": "1.22.0",
     "@graphql-codegen/typescript-resolvers": "1.19.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "apollo-server": "^2.23.0",
+    "apollo-server-express": "^2.23.0",
+    "connect": "^3.7.0",
+    "qs-middleware": "^1.0.3"
+  }
 }
