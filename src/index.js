@@ -25,6 +25,10 @@ const typeDefs = gql`
     age: Int
     city: String
   }
+  type DataPoint {
+    value: Int!
+    timestamp: Int!
+  }
   type Query {
     users: [User]
     user(name: String!): User
@@ -32,7 +36,8 @@ const typeDefs = gql`
   type Mutation {
     newUser(name: String!, age: Int, city: String): User
     deleteUser(name: String!): User
-    dataPoint(dataStreamId: Int): Int
+    logEvent(dataStreamId: Int!): Boolean
+    createRowInDB(dataStreamId: Int!, currentTime: Int!, count: Int!): Boolean!
   }
 `;
 
@@ -51,27 +56,34 @@ let users = {
 
 let dataInLastFiveSec = {}
 
+const timestampify = (ts) => Math.floor(ts / 5000) * 5000
+
 // TODO: setInterval timer is off!
 setTimeout(() => {
   setInterval(() => {
-    console.log((new Date).getTime() % 5000)
+    const currentTime = timestampify(new Date().getTime())
 
     //create a new row in graph table for a new DP
     //create new row for each k-v pair in last 5 sec
     //
-
-    client.query(`INSERT into graphs VALUE (${data_stream_id})`, (err, res) => {
-      if (err) throw err;
-      for (let row of res.rows) {
-        console.log(JSON.stringify(row));
-      }
-      client.end();
-    });
+    for (const dataStreamId of Object.keys(dataInLastFiveSec)) {
+      const count = dataInLastFiveSec[dataStreamId]; 
+      client.query(`
+          INSERT INTO data_streams 
+          VALUES (${dataStreamId}, ${currentTime}, ${count})
+        `, (err, res) => {
+            if (err) throw err;
+            for (let row of res.rows) {
+              console.log(JSON.stringify(row));
+            }
+            client.end();
+        });
+    }
 
     dataInLastFiveSec = {}
   }, 5000)
 
-}, 5000 - (new Date).getTime() % 5000)
+}, 5000 - new Date().getTime() % 5000)
 
 // A map of functions which return data for the schema.
 const resolvers = {
@@ -87,14 +99,28 @@ const resolvers = {
       delete users[name]
       return userToDelete
     },
-    dataPoint: (_, { dataStreamId }) => {
+    logEvent: (_, { dataStreamId }) => {
       if (!(dataStreamId in dataInLastFiveSec)) {
         dataInLastFiveSec[dataStreamId] = 0
       } 
       dataInLastFiveSec[dataStreamId] += 1
     },
+    createRowInDB: (_, {dataStreamId, currentTime, count }) => {
+      client.query(`
+          INSERT INTO data_streams 
+          VALUES (${dataStreamId}, ${currentTime}, ${count})
+        `, (err, res) => {
+            if (err) throw err;
+            for (let row of res.rows) {
+              console.log(JSON.stringify(row));
+            }
+            client.end();
+        });
+        return true;
+    }
+  },
 
-  }
+  
 
 };
 
