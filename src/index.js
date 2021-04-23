@@ -25,10 +25,6 @@ const typeDefs = gql`
     age: Int
     city: String
   }
-  type DataPoint {
-    value: Int!
-    timestamp: Int!
-  }
   type Query {
     users: [User]
     user(name: String!): User
@@ -78,6 +74,7 @@ setTimeout(() => {
             }
             client.end();
         });
+      console.log(dataStreamId)
     }
 
     dataInLastFiveSec = {}
@@ -89,7 +86,7 @@ setTimeout(() => {
 const resolvers = {
   Query: {
     users: () => Object.values(users), 
-    user: (_, { name }) => users[name], 
+    user: (_, { name }) => users[name],
   },
 
   Mutation: {
