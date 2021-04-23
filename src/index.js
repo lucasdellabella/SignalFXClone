@@ -1,6 +1,14 @@
 const { ApolloServer, gql } = require('apollo-server');
 const { Client } = require('pg');
 
+const connectionInfo = {
+  user: 'alexkansas',
+  password: '',
+  host: 'localhost',
+  port: '5432',
+  database: 'signalfxclone' 
+}
+
 const client = new Client(
   process.env.DATABASE_URL 
     ? { connectionString: process.env.DATABASE_URL } 
@@ -17,13 +25,6 @@ client.query('SELECT table_schema,table_name FROM information_schema.tables;', (
   client.end();
 });
 
-const connectionInfo = {
-  user: 'alexkansas',
-  password: '',
-  host: 'localhost',
-  port: '5432',
-  database: 'signalfxclone' 
-}
 
 
 // The GraphQL schema
@@ -40,6 +41,7 @@ const typeDefs = gql`
   type Mutation {
     newUser(name: String!, age: Int, city: String): User
     deleteUser(name: String!): User
+    dataPoint(dataStreamId: Int): Int
   }
 `;
 
@@ -56,6 +58,16 @@ let users = {
   },
 }
 
+let dataInLastFiveSec = {}
+
+// TODO: setInterval timer is off!
+setTimeout(() => {
+  setInterval(() => {
+    console.log((new Date).getTime() % 5000)
+    dataInLastFiveSec = {}
+  }, 5000)
+
+}, 5000 - (new Date).getTime() % 5000)
 
 // A map of functions which return data for the schema.
 const resolvers = {
@@ -71,7 +83,13 @@ const resolvers = {
       delete users[name]
       return userToDelete
     },
-    
+    dataPoint: (_, { dataStreamId }) => {
+      if (!(dataStreamId in dataInLastFiveSec)) {
+        dataInLastFiveSec[dataStreamId] = 0
+      } 
+      dataInLastFiveSec[dataStreamId] += 1
+    },
+
   }
 
 };
