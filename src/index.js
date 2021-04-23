@@ -60,7 +60,7 @@ setTimeout(() => {
     //create new row for each k-v pair in last 5 sec
     //
 
-    client.query(`INSERT into graphs VALUE ({data_stream_id})`, (err, res) => {
+    client.query(`INSERT into graphs VALUE (${data_stream_id})`, (err, res) => {
       if (err) throw err;
       for (let row of res.rows) {
         console.log(JSON.stringify(row));
