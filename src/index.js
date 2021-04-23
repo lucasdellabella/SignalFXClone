@@ -2,7 +2,9 @@ const { ApolloServer, gql } = require('apollo-server');
 const { Client } = require('pg');
 
 const client = new Client(
-  connectionInfo
+  process.env.DATABASE_URL 
+    ? { connectionString: process.env.DATABASE_URL } 
+    : connectionInfo
 );
 
 client.connect();
@@ -68,7 +70,8 @@ const resolvers = {
       const userToDelete = users[name]
       delete users[name]
       return userToDelete
-    }
+    },
+    
   }
 
 };
@@ -85,3 +88,10 @@ server.listen({
 }).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
 });
+
+
+
+
+
+
+
