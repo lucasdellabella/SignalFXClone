@@ -1,5 +1,5 @@
 const { ApolloServer, gql } = require('apollo-server');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 
 const connectionInfo = {
   user: 'alexkansas',
@@ -9,13 +9,13 @@ const connectionInfo = {
   database: 'signalfxclone' 
 }
 
-const client = new Client(
+const pool = new Pool(
   process.env.DATABASE_URL 
     ? { connectionString: process.env.DATABASE_URL } 
     : connectionInfo
 );
 
-client.connect();
+pool.connect();
 
 
 // The GraphQL schema
@@ -25,9 +25,18 @@ const typeDefs = gql`
     age: Int
     city: String
   }
+
+  type DataPoint {
+    dataStreamId: ID!
+    timestamp: Int!
+    count: Int!
+  }
+
   type Query {
     users: [User]
     user(name: String!): User
+    dataStreams: [[DataPoint]]
+    dataStream(id: ID!): [DataPoint]
   }
   type Mutation {
     newUser(name: String!, age: Int, city: String): User
@@ -58,13 +67,9 @@ const timestampify = (ts) => Math.floor(ts / 5000) * 5000
 setTimeout(() => {
   setInterval(() => {
     const currentTime = timestampify(new Date().getTime())
-
-    //create a new row in graph table for a new DP
-    //create new row for each k-v pair in last 5 sec
-    //
     for (const dataStreamId of Object.keys(dataInLastFiveSec)) {
       const count = dataInLastFiveSec[dataStreamId]; 
-      client.query(`
+      pool.query(`
           INSERT INTO data_streams 
           VALUES (${dataStreamId}, ${currentTime}, ${count})
         `, (err, res) => {
@@ -72,7 +77,6 @@ setTimeout(() => {
             for (let row of res.rows) {
               console.log(JSON.stringify(row));
             }
-            client.end();
         });
       console.log(dataStreamId)
     }
@@ -82,11 +86,41 @@ setTimeout(() => {
 
 }, 5000 - new Date().getTime() % 5000)
 
+const fixDataPointKeyNames = (d) => {
+  return {...d, dataStreamId: d.id, timestamp: d.time_stamp}
+}
+
 // A map of functions which return data for the schema.
 const resolvers = {
   Query: {
     users: () => Object.values(users), 
     user: (_, { name }) => users[name],
+    dataStreams: async () => {
+      const res = await pool.query(`
+          SELECT * FROM data_streams
+          ORDER BY id
+        `)   
+      const dataStreams = [[res.rows[0]]];
+      let previousRow = fixDataPointKeyNames(res.rows[0]);
+      for (let i = 1; i < res.rows.length; i++) {
+        const currentRow = fixDataPointKeyNames(res.rows[i])
+        if (currentRow.dataStreamId !== previousRow.dataStreamId) {
+          dataStreams.push([currentRow])
+        } else {
+          dataStreams[dataStreams.length - 1].push(currentRow)
+        }
+        previousRow = currentRow
+      }
+      
+      return dataStreams
+    },
+    dataStream: async (_, { id }) => {
+      const res = await pool.query(`
+        SELECT * FROM data_streams 
+        WHERE id = ${id}
+      `)
+      return res.rows.map(fixDataPointKeyNames)
+    }
   },
 
   Mutation: {
@@ -116,9 +150,6 @@ const resolvers = {
         return true;
     }
   },
-
-  
-
 };
 
 const server = new ApolloServer({
@@ -133,10 +164,3 @@ server.listen({
 }).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
 });
-
-
-
-
-
-
-
