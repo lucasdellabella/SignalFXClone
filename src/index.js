@@ -2,21 +2,20 @@ const { ApolloServer, gql } = require('apollo-server');
 const { Pool } = require('pg');
 
 const connectionInfo = {
-  user: 'alexkansas',
+  user: process.env.SIGNALFXCLONE_POSTGRES_USER,
   password: '',
   host: 'localhost',
   port: '5432',
-  database: 'signalfxclone' 
+  database: process.env.SIGNALFXCLONE_POSTGRES_DB,
 }
 
 const pool = new Pool(
-  process.env.DATABASE_URL 
-    ? { connectionString: process.env.DATABASE_URL } 
+  process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL }
     : connectionInfo
 );
 
 pool.connect();
-
 
 // The GraphQL schema
 const typeDefs = gql`
@@ -34,15 +33,22 @@ const typeDefs = gql`
 
   type Graph {
     id: ID!
-    dataStreams: [[DataPoint]]
+    dataStreams: [DataStream]
+  }
+
+  type DataStream {
+    dataPoints: [DataPoint]
   }
 
   type Query {
     users: [User]
     user(name: String!): User
-    dataStreams: [[DataPoint]]
-    dataStream(id: ID!): [DataPoint]
+    dataStream(id: ID!): DataStream
+    dataStreams: [DataStream]
+    graph: Graph
+    graphs: [Graph]
   }
+
   type Mutation {
     newUser(name: String!, age: Int, city: String): User
     deleteUser(name: String!): User
@@ -73,9 +79,9 @@ setTimeout(() => {
   setInterval(() => {
     const currentTime = timestampify(new Date().getTime())
     for (const dataStreamId of Object.keys(dataInLastFiveSec)) {
-      const count = dataInLastFiveSec[dataStreamId]; 
+      const count = dataInLastFiveSec[dataStreamId];
       pool.query(`
-          INSERT INTO data_streams 
+          INSERT INTO data_streams
           VALUES (${dataStreamId}, ${currentTime}, ${count})
         `, (err, res) => {
             if (err) throw err;
@@ -98,13 +104,13 @@ const fixDataPointKeyNames = (d) => {
 // A map of functions which return data for the schema.
 const resolvers = {
   Query: {
-    users: () => Object.values(users), 
+    users: () => Object.values(users),
     user: (_, { name }) => users[name],
     dataStreams: async () => {
       const res = await pool.query(`
           SELECT * FROM data_streams
           ORDER BY id
-        `)   
+        `)
       const dataStreams = [[fixDataPointKeyNames(res.rows[0])]];
       let previousRow = fixDataPointKeyNames(res.rows[0]);
       for (let i = 1; i < res.rows.length; i++) {
@@ -116,23 +122,22 @@ const resolvers = {
         }
         previousRow = currentRow
       }
-      console.log(dataStreams)
-      return dataStreams
+
+        return dataStreams.map(dataStream => ({"dataPoints": dataStream}))
     },
     dataStream: async (_, { id }) => {
       const res = await pool.query(`
-        SELECT * FROM data_streams 
+        SELECT * FROM data_streams
         WHERE id = ${id}
       `)
       return res.rows.map(fixDataPointKeyNames)
     },
-    graph: () => {
-      
-    },
-    graphs: () => {
-
-    },
   },
+
+    Graph(): {
+        dataStreams
+    },
+
 
   Mutation: {
     newUser:  (_, { name, age, city }) => users[name] = {name, age, city},
@@ -144,12 +149,12 @@ const resolvers = {
     logEvent: (_, { dataStreamId }) => {
       if (!(dataStreamId in dataInLastFiveSec)) {
         dataInLastFiveSec[dataStreamId] = 0
-      } 
+      }
       dataInLastFiveSec[dataStreamId] += 1
     },
     createRowInDB: (_, {dataStreamId, currentTime, count }) => {
       client.query(`
-          INSERT INTO data_streams 
+          INSERT INTO data_streams
           VALUES (${dataStreamId}, ${currentTime}, ${count})
         `, (err, res) => {
             if (err) throw err;
