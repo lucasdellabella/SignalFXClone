@@ -28,8 +28,13 @@ const typeDefs = gql`
 
   type DataPoint {
     dataStreamId: ID!
-    timestamp: Int!
+    timestamp: String!
     count: Int!
+  }
+
+  type Graph {
+    id: ID!
+    dataStreams: [[DataPoint]]
   }
 
   type Query {
@@ -87,7 +92,7 @@ setTimeout(() => {
 }, 5000 - new Date().getTime() % 5000)
 
 const fixDataPointKeyNames = (d) => {
-  return {...d, dataStreamId: d.id, timestamp: d.time_stamp}
+  return {dataStreamId: d.id, timestamp: d.time_stamp, count: d.count}
 }
 
 // A map of functions which return data for the schema.
@@ -100,7 +105,7 @@ const resolvers = {
           SELECT * FROM data_streams
           ORDER BY id
         `)   
-      const dataStreams = [[res.rows[0]]];
+      const dataStreams = [[fixDataPointKeyNames(res.rows[0])]];
       let previousRow = fixDataPointKeyNames(res.rows[0]);
       for (let i = 1; i < res.rows.length; i++) {
         const currentRow = fixDataPointKeyNames(res.rows[i])
@@ -111,7 +116,7 @@ const resolvers = {
         }
         previousRow = currentRow
       }
-      
+      console.log(dataStreams)
       return dataStreams
     },
     dataStream: async (_, { id }) => {
@@ -120,7 +125,13 @@ const resolvers = {
         WHERE id = ${id}
       `)
       return res.rows.map(fixDataPointKeyNames)
-    }
+    },
+    graph: () => {
+      
+    },
+    graphs: () => {
+
+    },
   },
 
   Mutation: {
