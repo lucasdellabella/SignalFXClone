@@ -6,8 +6,9 @@ CREATE TABLE data_streams (
 );
 
 CREATE TABLE graphs (
-  id                 SERIAL PRIMARY KEY,
-  data_stream_id     integer  NOT NULL
+  id                 SERIAL,
+  data_stream_id     integer  NOT NULL,
+  PRIMARY KEY (id, data_stream_id)
 );
 
   -- FOREIGN KEY(data_stream_id) REFERENCES data_streams(id)
