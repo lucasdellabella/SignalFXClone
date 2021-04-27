@@ -14,7 +14,6 @@ const pool = new Pool(
     : connectionInfo
 );
 
-
 pool.connect();
 
 
