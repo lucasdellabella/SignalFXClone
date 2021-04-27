@@ -69,7 +69,7 @@ const getDataStreamIdsForOneGraph = async (id) => {
     `)
 
     return res.rows.reduce((a, b) => {
-        a.push(b.dataStreamId)
+        a.push(b.data_stream_id)
         return a;
     }, [])
 }
@@ -112,13 +112,17 @@ const resolvers = {
         SELECT * FROM data_streams
         WHERE id = ${id}
       `)
-      // console.log(res.rows)
+      console.log(res.rows)
       return res.rows.map(data => fixDataPointKeyNames(data))
     },
-    graph: async (_, { id }) => ({
+    graph: async (_, { id }) => {
+      const res = await getDataStreamIdsForOneGraph(id)
+      console.log(res);
+      return ({ 
         id: id,
-        dataStreamIds: await getDataStreamIdsForOneGraph(id),
-    }),
+        dataStreamIds: res
+      })
+    },
     graphs: async () => {
         const graphsData = await getDataStreamIdsForAllGraphs()
         console.log(Object.entries(graphsData))
