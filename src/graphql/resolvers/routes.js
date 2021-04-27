@@ -6,11 +6,12 @@ const connectionInfo = {
   host: 'localhost',
   port: '5432',
   database: process.env.SIGNALFXCLONE_POSTGRES_DB,
+  ssl: true
 }
 
 const pool = new Pool(
   process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL }
+    ? { connectionString: process.env.DATABASE_URL, ssl: true }
     : connectionInfo
 );
 
