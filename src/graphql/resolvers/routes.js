@@ -112,12 +112,17 @@ const resolvers = {
         SELECT * FROM data_streams
         WHERE id = ${id}
       `)
-      console.log(res.rows)
-      return res.rows.map(data => fixDataPointKeyNames(data))
+
+      let res2 = res.rows.map(data => ({timestamp: data.time_stamp, count: data.count}))
+
+      return ({
+        id: id,
+        dataPoints: res2
+      })
     },
     graph: async (_, { id }) => {
       const res = await getDataStreamIdsForOneGraph(id)
-      console.log(res);
+
       return ({ 
         id: id,
         dataStreamIds: res
@@ -150,19 +155,6 @@ const resolvers = {
       }
       dataInLastFiveSec[dataStreamId] += 1
     },
-    createRowInDB: (_, {dataStreamId, currentTime, count }) => {
-      client.query(`
-          INSERT INTO data_streams
-          VALUES (${dataStreamId}, ${currentTime}, ${count})
-        `, (err, res) => {
-            if (err) throw err;
-            for (let row of res.rows) {
-              console.log(JSON.stringify(row));
-            }
-            client.end();
-        });
-        return true;
-    }
   },
 };
 
