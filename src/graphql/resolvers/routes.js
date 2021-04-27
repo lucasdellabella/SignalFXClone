@@ -112,7 +112,8 @@ const resolvers = {
         SELECT * FROM data_streams
         WHERE id = ${id}
       `)
-      return res.rows.map(fixDataPointKeyNames)
+      // console.log(res.rows)
+      return res.rows.map(data => fixDataPointKeyNames(data))
     },
     graph: async (_, { id }) => ({
         id: id,
