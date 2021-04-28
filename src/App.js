@@ -1,20 +1,33 @@
 import React, { useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
-
+import { gql, useMutation } from '@apollo/client';
 
 function App() {
-  const [singleShotDataInput, setSingleShotDataInput] = useState({count: 1})
-  const [multiShotDataInput, setMultiShotDataInput] = useState({count: 1, interval: 10000})
+  const [singleShotDataInput, setSingleShotDataInput] = useState({id: null, count: 1})
+  const [multiShotDataInput, setMultiShotDataInput] = useState({id: null, count: 1, interval: 10000})
+  
+  const LOG_EVENT = gql`
+    mutation logEvent($dataStreamId: ID!) {
+      logEvent(dataStreamId: $dataStreamId)
+    }
+  `;
 
-  const sendDataPoints = ({ count }) => {
+  const [logEvent, { data, loading, error }] = useMutation(LOG_EVENT);  
+
+  const sendDataPoints = ({ id, count }) => {
     // do graphql mutation
-    console.log(count)
+    console.log(id, count) //????????
+
+    while (count) {
+      logEvent({ variables: { dataStreamId: id }})
+      count--;
+    }
   }
 
-  const initiateMultishotDataSequence = ({ count, interval }) => {
+  const initiateMultishotDataSequence = ({ id, count, interval }) => {
     const intervalId = setInterval(() => {
-      sendDataPoints({count})
+      sendDataPoints({id, count})
     }, interval);
     // TODO add rows for activate multishot sequences, make them cancellable
   }
@@ -31,8 +44,8 @@ function App() {
           {/* Single shot burst */}
           <div className="datapoint-input">
             <div>
-              Send <input type="text" onChange={(e) => setSingleShotDataInput({count: e.target.value})} value={singleShotDataInput.count}/> 
-              datapoints.
+              Send <input type="text" onChange={(e) => setSingleShotDataInput({...singleShotDataInput, count: e.target.value})} value={singleShotDataInput.count}/> 
+              datapoints of ID <input type="text" onChange={(e) => setSingleShotDataInput({...singleShotDataInput, id: e.target.value})}/>.
             </div>
             <button onClick={() => sendDataPoints(singleShotDataInput)}>Send</button>
           </div>
@@ -40,7 +53,8 @@ function App() {
           <div className="datapoint-input">
             <div>
               Send <input type="text" onChange={(e) => setMultiShotDataInput({...multiShotDataInput, count: e.target.value})} value={multiShotDataInput.count}/> 
-              datapoints every <input type="text" onChange={(e) => setMultiShotDataInput({...multiShotDataInput, interval: e.target.value})} value={multiShotDataInput.interval}/>
+              datapoints of ID <input type="text" onChange={(e) => setMultiShotDataInput({...multiShotDataInput, id: e.target.value})}/> 
+              every <input type="text" onChange={(e) => setMultiShotDataInput({...multiShotDataInput, interval: e.target.value})} value={multiShotDataInput.interval}/>
               seconds.
             </div>
             <button onClick={() => initiateMultishotDataSequence(multiShotDataInput)}>Send</button>
