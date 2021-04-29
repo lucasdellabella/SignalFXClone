@@ -13,6 +13,20 @@
   }
 }
 
+.active-multishot-row {
+  display: grid;
+  grid-template-columns: 4fr 4fr 4fr 1fr;
+  background-color: #83de56e5;
+  border-radius: 10px;
+  padding: 5px;
+  margin-bottom:3px;
+}
+
+.active-multishot-row > button {
+  background-color: rgb(255, 88, 88);
+  
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;

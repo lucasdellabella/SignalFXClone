@@ -6,7 +6,9 @@ import { gql, useMutation } from '@apollo/client';
 function App() {
   const [singleShotDataInput, setSingleShotDataInput] = useState({id: null, count: 1})
   const [multiShotDataInput, setMultiShotDataInput] = useState({id: null, count: 1, interval: 10000})
+  const [activeMultiShotTable, setActiveMultiShotTable] = useState([])
   
+
   const LOG_EVENT = gql`
     mutation logEvent($dataStreamId: ID!) {
       logEvent(dataStreamId: $dataStreamId)
@@ -26,8 +28,25 @@ function App() {
     const intervalId = setInterval(() => {
       sendDataPoints({id, count})
     }, interval);
-    // TODO add rows for activate multishot sequences, make them cancellable
+    setActiveMultiShotTable([...activeMultiShotTable, {
+      id,
+      count,
+      interval,
+      intervalId
+    }])
   }
+
+  const activeMultiShotTableRow = ({ id, count, interval, intervalId: rowIntervalId }, i) => (
+    <div className="active-multishot-row" key={i}>
+      <div>datapoints: {count}</div>
+      <div>id: {id}</div>
+      <div>time interval: {interval}</div> 
+      <button onClick={() => {
+        clearInterval(rowIntervalId)
+        setActiveMultiShotTable(activeMultiShotTable.filter(({ intervalId }) => rowIntervalId !== intervalId))
+      }}>X</button>
+    </div>
+  )
 
   return (
     <div className="App">
@@ -55,6 +74,9 @@ function App() {
               seconds.
             </div>
             <button onClick={() => initiateMultishotDataSequence(multiShotDataInput)}>Send</button>
+          </div>
+          <div className='active-multishot-table'>
+            {activeMultiShotTable.map(activeMultiShotTableRow)}
           </div>
           {/* Link to frontend app with graphs*/}
         </div>
