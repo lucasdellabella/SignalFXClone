@@ -16,11 +16,8 @@ function App() {
   const [logEvent, { data, loading, error }] = useMutation(LOG_EVENT);  
 
   const sendDataPoints = ({ id, count }) => {
-    // do graphql mutation
-    console.log(id, count) //????????
-
     while (count) {
-      logEvent({ variables: { dataStreamId: parseInt(id) }})
+      logEvent({ variables: { dataStreamId: id }})
       count--;
     }
   }
