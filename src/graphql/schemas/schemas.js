@@ -26,8 +26,7 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    logEvent(dataStreamId: Int!): Boolean
-    createRowInDB(dataStreamId: Int!, currentTime: Int!, count: Int!): Boolean!
+    logEvent(dataStreamId: ID!): Boolean
   }
 `;
 
