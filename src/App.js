@@ -20,7 +20,7 @@ function App() {
     console.log(id, count) //????????
 
     while (count) {
-      logEvent({ variables: { dataStreamId: id }})
+      logEvent({ variables: { dataStreamId: parseInt(id) }})
       count--;
     }
   }
